@@ -1,16 +1,12 @@
 """
-Resume–Job Match Scorer API
+Resume-Job Match Scorer API
 - Accept resume (PDF) + job description
-- Return match score (0–100) and improvement tips
+- Return match score (0-100) and improvement tips
 - Uses sentence-transformers for semantic similarity; optional keyword boost
 """
 import io
 import os
 import re
-_origins = os.environ.get("FRONTEND_ORIGIN", "*").strip()
-_cors_origins = [o.strip() for o in _origins.split(",") if o.strip()] if _origins != "*" else ["*"]
-app.add_middleware(
-    CORSMiddleware,
 
 from typing import List, Optional
 
@@ -31,15 +27,19 @@ def extract_text_from_pdf(content: bytes) -> str:
         text += page.extract_text() or ""
     return text.strip() or ""
 
-app = FastAPI(title="Resume–Job Match Scorer API")
+app = FastAPI(title="Resume-Job Match Scorer API")
 
-# CORS: set FRONTEND_ORIGIN on Render to your Vercel URL (e.g. https://your-app.vercel.app). Comma-separate multiple.
+# CORS: set FRONTEND_ORIGIN on Render to your Vercel URL. Comma-separate multiple origins.
 _origins = os.environ.get("FRONTEND_ORIGIN", "*").strip()
-_cors_origins = [o.strip() for o in _origins.split(",") if o.strip()] if _origins != "*" else ["*"]
+if _origins == "*":
+    _cors_origins = ["*"]
+else:
+    _cors_origins = [o.strip() for o in _origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_credentials=False,  # must be False when using allow_origins=["*"]; fine for this API (no cookies)
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -70,7 +70,7 @@ def keyword_score(resume_lower: str, job_lower: str) -> float:
     return min(100.0, overlap * 100)
 
 def semantic_score(resume_text: str, job_text: str) -> float:
-    """Cosine similarity between embeddings, scaled to 0–100."""
+    """Cosine similarity between embeddings, scaled to 0-100."""
     model = embedder()
     # Use first 512 tokens worth of text to avoid overflow
     r = resume_text[:4000] if len(resume_text) > 4000 else resume_text
