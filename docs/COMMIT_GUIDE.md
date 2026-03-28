@@ -2,7 +2,7 @@
 
 A clear Git history helps reviewers see **frontend**, **backend**, and **AI-related** work as separate steps.
 
-## Suggested commit style
+## Commit style
 
 Use **imperative, short** messages (one line), optional body for context:
 
@@ -21,6 +21,4 @@ Prefixes like `feat:`, `fix:`, `docs:` are optional but make history easy to sca
 - **Do commit:** source code, `README.md`, `docs/`, `requirements.txt`, `package.json`, configs (`vercel.json`, `render.yaml`), Colab notebook.  
 - **Do not commit:** `backend/venv/`, `frontend/node_modules/`, `.env` files with secrets (use `.env.example` only).
 
-## If your history is already one big commit
 
-You may still **add further commits** for documentation and fixes (`docs: …`, `fix: …`). Squashing is not required unless your course demands it.
