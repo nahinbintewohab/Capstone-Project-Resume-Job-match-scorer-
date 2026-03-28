@@ -1,5 +1,6 @@
 # Resume–Job Match Scorer
-**Live app:** https://your-app.vercel.app
+**Live app:** https://capstone-project-resume-job-match-s.vercel.app/
+
 
 Applicants upload a resume and paste a job description; the app returns a **match score** and **improvement tips** using semantic similarity (embeddings) plus a keyword overlap blend.
 
