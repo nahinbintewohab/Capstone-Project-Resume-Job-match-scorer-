@@ -154,13 +154,18 @@ Run `npm install` again only if `package.json` changed. Stop servers with **Ctrl
    - **Runtime:** Python 3
    - **Build Command:** `pip install -r requirements.txt`
    - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-3. **Environment variables** (optional; recommended once you know your frontend URL):
+3. **Pin Python 3.11** (important): Render may default to a very new Python (e.g. 3.14) and the app can crash on start. Either:
+   - Add **`PYTHON_VERSION`** = **`3.11.9`** in the service **Environment** tab, **or**
+   - Rely on **`backend/runtime.txt`** in the repo (already set to `3.11.9`) and redeploy after you push.
+4. **Environment variables** (optional; recommended once you know your frontend URL):
    - **`FRONTEND_ORIGIN`** = your Vercel URL, e.g. `https://your-app.vercel.app`  
      Tightens CORS. If unset, the API allows all origins (`*`) for simpler testing.
-4. Deploy and copy the service URL, e.g. `https://your-api.onrender.com`.
-5. Verify: **https://your-api.onrender.com/docs** should show Swagger.
+5. Deploy and copy the service URL, e.g. `https://your-api.onrender.com`.
+6. Verify: **https://your-api.onrender.com/docs** should show Swagger.
 
 You can also use the repo’s **`render.yaml`** (Blueprint) to create the service with similar settings.
+
+**Deploy failed with “Exited with status 1”?** Open **Logs**, scroll to the bottom for the real error. If you see **Python 3.14** in paths, set **`PYTHON_VERSION`** to **`3.11.9`**, commit/push **`backend/runtime.txt`**, then **Manual Deploy → Clear build cache & deploy**. You do **not** need a new Render service—fix settings and redeploy the same one.
 
 ### Step 3 — Frontend on Vercel
 
