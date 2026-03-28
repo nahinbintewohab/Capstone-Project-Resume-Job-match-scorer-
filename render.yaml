@@ -1,0 +1,12 @@
+# Render Blueprint: backend only (frontend deploys on Vercel)
+services:
+  - type: web
+    name: resume-job-match-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+    # Optional: add OPENAI_API_KEY in Render dashboard if you switch to OpenAI embeddings

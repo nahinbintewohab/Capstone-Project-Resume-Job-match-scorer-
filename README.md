@@ -1,0 +1,248 @@
+# Resume–Job Match Scorer
+
+Applicants upload a resume and paste a job description; the app returns a **match score** and **improvement tips** using semantic similarity (embeddings) plus a keyword overlap blend.
+
+---
+
+## Table of contents
+
+1. [Architecture](#architecture)
+2. [Prerequisites](#prerequisites)
+3. [Run locally (backend + frontend)](#run-locally-backend--frontend)
+4. [Next time you open the project](#next-time-you-open-the-project)
+5. [Going live: Vercel + Render](#going-live-vercel--render)
+6. [Run in Google Colab](#run-in-google-colab)
+7. [Technical reference](#technical-reference)
+
+---
+
+## Architecture
+
+```
+┌─────────────────┐         ┌─────────────────────┐
+│   React (Vite)  │  HTTP   │  FastAPI backend    │
+│   - Upload PDF  │ ──────► │  - Parse resume     │
+│   - Job paste   │         │  - Embeddings       │
+│   - Score + tips│ ◄────── │  - Score + tips     │
+└─────────────────┘         └─────────────────────┘
+        │                              │
+        ▼                              ▼
+    [Vercel]                      [Render]
+```
+
+| Layer | Stack | Production host |
+|--------|--------|------------------|
+| Frontend | React (Vite) | **Vercel** (or Netlify, Cloudflare Pages) |
+| Backend | FastAPI, sentence-transformers | **Render** (or Railway, Fly.io) |
+| AI | `all-MiniLM-L6-v2` embeddings + keyword hybrid | Optional: OpenAI embeddings later |
+
+**Production rule:** Do **not** host the full ML backend only on Vercel serverless—PyTorch + models exceed practical limits there. Use **Vercel for the UI** and **Render (or similar) for the API**.
+
+---
+
+## Prerequisites
+
+| Tool | Purpose | Check |
+|------|---------|--------|
+| **Python 3.11+** (3.13 OK) | Backend | `python --version` or `py --version` |
+| **Node.js LTS** | Frontend (`npm`) | `node -v` and `npm -v` |
+| **Git** (for deploy) | Push to GitHub | `git --version` |
+
+**If `python` is not recognized:** Install from [python.org](https://www.python.org/downloads/) and tick **Add python.exe to PATH**, or use `py` instead of `python` on Windows.
+
+**If `npm` is not recognized:** Install **Node.js LTS** from [nodejs.org](https://nodejs.org) and open a **new** terminal.
+
+**Python 3.13:** This repo uses `numpy>=2.1` and `sentence-transformers>=3` in `backend/requirements.txt` so pip installs **pre-built wheels** (older pins tried to compile NumPy and failed without Visual Studio).
+
+---
+
+## Run locally (backend + frontend)
+
+Use **two terminals**. Replace the path below if your folder is not named `Project`.
+
+### Terminal 1 — Backend
+
+```powershell
+cd "c:\Users\RDZ - Nahin\Desktop\Project\backend"
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+Wait until you see **`Uvicorn running on http://127.0.0.1:8000`**. Optional: open **http://localhost:8000/docs**. Leave this window open.
+
+### Terminal 2 — Frontend
+
+```powershell
+cd "c:\Users\RDZ - Nahin\Desktop\Project\frontend"
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**. Upload a **PDF** resume, paste the job description, click **Analyze match**. The first analysis may take a while while the model loads (~80MB).
+
+**Local API URL:** You do **not** need a `.env` file: Vite proxies `/api` to `http://localhost:8000` during `npm run dev`.
+
+### One-line quick start (from repo root)
+
+```bash
+# Terminal 1
+cd backend && python -m venv venv && venv\Scripts\activate && pip install -r requirements.txt && uvicorn main:app --reload
+
+# Terminal 2
+cd frontend && npm install && npm run dev
+```
+
+---
+
+## Next time you open the project
+
+You do **not** recreate the venv every time.
+
+**Terminal 1**
+
+```powershell
+cd "c:\Users\RDZ - Nahin\Desktop\Project\backend"
+.\venv\Scripts\Activate.ps1
+uvicorn main:app --reload
+```
+
+**Terminal 2**
+
+```powershell
+cd "c:\Users\RDZ - Nahin\Desktop\Project\frontend"
+npm run dev
+```
+
+Run `npm install` again only if `package.json` changed. Stop servers with **Ctrl+C** in each terminal.
+
+---
+
+## Going live: Vercel + Render
+
+### Why two services?
+
+| Part | Where | Why |
+|------|--------|-----|
+| React UI | **Vercel** | Static site; fast CDN. |
+| FastAPI + ML | **Render** | Long-running Python, large deps (PyTorch, models), file uploads. |
+
+**Free tier:** Render free instances **sleep** when idle; the first request after sleep can take **~1–2 minutes**. First **build** may take **10–20+ minutes** (PyTorch download).
+
+### Step 1 — GitHub
+
+1. Create a repository on [GitHub](https://github.com/new).
+2. From your project folder (adjust URL):
+
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+   git push -u origin main
+   ```
+
+   Or use [GitHub Desktop](https://desktop.github.com/) to publish the folder.
+
+### Step 2 — Backend on Render
+
+1. [render.com](https://render.com) → **New** → **Web Service** → connect the repo.
+2. Configure:
+   - **Root Directory:** `backend`
+   - **Runtime:** Python 3
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
+3. **Environment variables** (optional; recommended once you know your frontend URL):
+   - **`FRONTEND_ORIGIN`** = your Vercel URL, e.g. `https://your-app.vercel.app`  
+     Tightens CORS. If unset, the API allows all origins (`*`) for simpler testing.
+4. Deploy and copy the service URL, e.g. `https://your-api.onrender.com`.
+5. Verify: **https://your-api.onrender.com/docs** should show Swagger.
+
+You can also use the repo’s **`render.yaml`** (Blueprint) to create the service with similar settings.
+
+### Step 3 — Frontend on Vercel
+
+1. [vercel.com](https://vercel.com) → **Add New** → **Project** → import the **same** repo.
+2. **Root Directory:** `frontend` (required).
+3. **Environment variable:**
+   - **Name:** `VITE_API_URL`
+   - **Value:** your Render URL **with no trailing slash**, e.g. `https://your-api.onrender.com`
+4. Deploy and open the Vercel URL.
+
+If the browser blocks requests to the API, set **`FRONTEND_ORIGIN`** on Render to your exact Vercel URL and **redeploy** the Render service.
+
+### Step 4 — After deploy
+
+- Share the **Vercel** URL as the public app.
+- Watch **Render** logs for errors, cold starts, or timeouts.
+
+**Other hosts for the API:** [Railway](https://railway.app), [Fly.io](https://fly.io), [Google Cloud Run](https://cloud.google.com/run) — same idea: Python web process + `uvicorn main:app --host 0.0.0.0 --port $PORT` (or platform-specific port).
+
+---
+
+## Run in Google Colab
+
+No install on your PC: open **`colab/resume_job_match_colab.ipynb`** in [Google Colab](https://colab.research.google.com) (File → Upload notebook).
+
+1. **Install cell:** run once (`PyPDF2`, `sentence-transformers`, `numpy`).
+2. **Load cell:** loads the embedding model (first run ~80MB download).
+3. **Upload cell:** upload resume PDF; paste job description; type **END** on a new line when done.
+4. **Score cell:** prints match score and tips.
+
+Re-run steps 3–4 for another resume or job. Logic matches the FastAPI app (inline code, no custom functions in the notebook).
+
+---
+
+## Technical reference
+
+### API
+
+- **`POST /api/analyze`** — multipart form: `resume` (file), `job_description` (string).  
+- **Response:** `{ "score", "tips", "summary" }`.
+
+### Scoring (hybrid)
+
+- **Keyword:** word overlap between resume and job (after a small stopword set).
+- **Semantic:** cosine similarity of sentence-transformer embeddings.
+- **Blend:** `0.4 × keyword + 0.6 × semantic`, scaled to 0–100.
+
+### Backend environment (Render)
+
+| Variable | Purpose |
+|----------|---------|
+| `FRONTEND_ORIGIN` | CORS: your Vercel origin(s), comma-separated |
+| `OPENAI_API_KEY` | Only if you switch to OpenAI embeddings (not in default code) |
+
+### Frontend environment (Vercel)
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_API_URL` | Production API base URL (no trailing slash) |
+
+### Deploy checklist
+
+- [ ] Code pushed to GitHub
+- [ ] Render: Web Service, root `backend`, build + start commands set
+- [ ] Render: URL works at `/docs`
+- [ ] Vercel: root `frontend`, `VITE_API_URL` = Render URL
+- [ ] Optional: `FRONTEND_ORIGIN` on Render = Vercel URL, then redeploy backend
+- [ ] Smoke test: upload PDF + job on live Vercel site
+
+### Repo layout
+
+```
+Project/
+├── README.md
+├── render.yaml              # Optional Render Blueprint
+├── backend/
+│   ├── main.py              # FastAPI + CORS (FRONTEND_ORIGIN)
+│   └── requirements.txt
+├── frontend/
+│   ├── vercel.json
+│   ├── vite.config.js       # Dev proxy → localhost:8000
+│   └── src/
+└── colab/
+    └── resume_job_match_colab.ipynb
+```

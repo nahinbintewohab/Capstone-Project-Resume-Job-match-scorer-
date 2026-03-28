@@ -1,0 +1,23 @@
+# Python
+backend/venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env / secrets (never commit API keys)
+.env
+.env.local
+*.pem
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

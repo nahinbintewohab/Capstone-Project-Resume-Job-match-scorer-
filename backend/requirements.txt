@@ -1,0 +1,10 @@
+# Python 3.13: use numpy 2.x + sentence-transformers 3.x (pre-built wheels on Windows).
+# Older pins (numpy 1.26) fail on 3.13 because pip tries to compile from source without MSVC.
+
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+PyPDF2>=3.0.1
+numpy>=2.1.0
+sentence-transformers>=3.0.0
+# optional: openai>=1.10.0
