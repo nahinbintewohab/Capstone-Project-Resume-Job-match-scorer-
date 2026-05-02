@@ -4,7 +4,6 @@
 
 Applicants upload a resume and paste a job description; the app returns a **match score** and **improvement tips** using semantic similarity (embeddings) plus a keyword overlap blend.
 
-**Live demo (add your URLs):** Frontend — `https://YOUR-APP.vercel.app` · API docs — `https://YOUR-API.onrender.com/docs`
 
 ---
 
